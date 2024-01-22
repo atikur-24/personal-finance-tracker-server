@@ -48,7 +48,12 @@ async function run() {
       res.send(result);
     });
 
-    // app.delete("/users/:id", async (req, res) => {
+    // delete all transaction by user
+    app.delete("/transactions", async (req, res) => {
+      const result = await transactionCollection.deleteMany();
+      res.send(result);
+    });
+    // app.delete("/transactions", async (req, res) => {
     //   const id = req.params.id;
     //   const query = { _id: new ObjectId(id) };
     //   const result = await userCollection.deleteOne(query);
