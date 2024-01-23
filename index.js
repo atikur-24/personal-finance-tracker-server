@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion, ObjectId, Collection } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -32,12 +32,12 @@ async function run() {
 
     // get user transactions data to DB with user email wise
     app.get("/transactions", async (req, res) => {
-      // const email = req.params.email;
-      // if(!email) {
-      //   res.send([])
-      // }
-      // const query = { email: email };
-      const result = await transactionCollection.find().toArray();
+      const email = req.query.email;
+      if (!email) {
+        res.send({ message: "Email Not Found" });
+      }
+      const query = { email: email };
+      const result = await transactionCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -48,17 +48,36 @@ async function run() {
       res.send(result);
     });
 
-    // delete all transaction by user
-    app.delete("/transactions", async (req, res) => {
-      const result = await transactionCollection.deleteMany();
+    // edit transaction data form client
+    app.put("/transactions/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      // Remove the _id field from the updatedData
+      delete updatedData._id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedTransaction = {
+        $set: { ...updatedData },
+      };
+      const result = await transactionCollection.updateOne(filter, updatedTransaction, options);
       res.send(result);
     });
-    // app.delete("/transactions", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const result = await userCollection.deleteOne(query);
-    //   res.send(result);
-    // });
+
+    // delete all transaction by user
+    app.delete("/transactions", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await transactionCollection.deleteMany(query);
+      res.send(result);
+    });
+
+    // delete a single transaction
+    app.delete("/transactions/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await transactionCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
